@@ -1,0 +1,73 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Description of what the lane does"
+
+  # 一度だけ実行 引数は関数に与えられた引数を参照
+  before_all do |lane, options|
+    puts "env #{options[:env]}"
+    
+    scheme = '';
+    if options[:env] == "stage" then
+      scheme = 'DrawPictures'
+    else
+      scheme = 'DrawPictures'
+    end
+    build_app(
+      workspace: "DrawPictures.xcworkspace",
+      scheme: scheme,
+      clean: true,
+      include_bitcode: false,
+      output_directory: './build',
+      output_name: 'drawpictures.ipa',
+      export_method: 'ad-hoc'
+    )
+  end
+
+  # deploy
+  # api_token deploygateのapitoken
+  # user_name deploygateのユーザーネーム
+  # env 環境設定 dev stage, prd
+  lane :deploy do |options|
+    # deploygate(
+    #   api_token: '56bfb4c1-9580-46b6-b113-8e8920180ff2', # Alternatively, environment variable DEPLOYGATE_API_TOKEN can be specified
+    #   user: 'ofuji-works', # Alternatively, environment variable DEPLOYGATE_USER can be specified
+    #   message: "Fastlane build #{lane_context[SharedValues::BUILD_NUMBER]}",
+    # )
+
+    if options[:env] != "prd"
+      deploygate(
+        api_token: options[:api_token], # Alternatively, environment variable DEPLOYGATE_API_TOKEN can be specified
+        user: options[:user_name], # Alternatively, environment variable DEPLOYGATE_USER can be specified
+        ipa: "./build/drawpictures.ipa",
+        message: "Fastlane build #{lane_context[SharedValues::BUILD_NUMBER]}",
+      )
+    end
+  end
+  
+  # エラー発生時 ※after_allは実行されない
+  error do |lane, exception|
+    puts "error lane"
+    puts exception.message
+  end
+
+  after_all do
+    puts "Successfully deployed new App Update."
+  end
+end
+
